@@ -2,68 +2,73 @@ package com.brenerborges.Client_CRUD.services;
 
 import java.util.Optional;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.brenerborges.Client_CRUD.dto.ClientDTO;
-import com.brenerborges.Client_CRUD.dto.NewClientDTO;
 import com.brenerborges.Client_CRUD.entities.Client;
 import com.brenerborges.Client_CRUD.repositories.ClientRepository;
-import com.brenerborges.Client_CRUD.services.exceptions.EntityNotFoundException;
+import com.brenerborges.Client_CRUD.services.exceptions.ResourceNotFoundException;
 
 @Service
-public class ClientService {
+public class ClientService{
 
 	@Autowired
 	private ClientRepository repository;
 	
-	@Transactional(readOnly=true)
-	public Page<ClientDTO> findAll(Integer page, Integer linesPerPage, String orderBy, String direction){
-		PageRequest pageRequest = PageRequest.of(page, linesPerPage, Direction.valueOf(direction), orderBy);
+	@Transactional(readOnly = true)
+	public Page<ClientDTO> findAllPaged(PageRequest pageRequest){
 		Page<Client> list = repository.findAll(pageRequest);
 		return list.map(x -> new ClientDTO(x));
 	}
-	
-	@Transactional(readOnly=true)
-	public ClientDTO findById(Long id) {
+
+	@Transactional(readOnly = true)
+	public ClientDTO findById(Long id){
 		Optional<Client> obj = repository.findById(id);
-		Client entity = obj.orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+		Client entity = obj.orElseThrow(() -> new ResourceNotFoundException("Resource not found!"));
 		return new ClientDTO(entity);
 	}
-	
-	@Transactional(readOnly=true)
-	public ClientDTO insert(ClientDTO obj) {
-		obj.setId(null);
-		Client entity = repository.save(fromClientDTO(obj));
+
+	@Transactional
+	public ClientDTO insert(ClientDTO obj){
+		Client entity = new Client();
+		fromClientDTO(entity, obj);
+		entity = repository.save(entity);
 		return new ClientDTO(entity);
 	}
-	
-	public ClientDTO update(NewClientDTO newObj) {
-		ClientDTO obj = findById(newObj.getId());
-		updateData(newObj, obj);
-		Client entity = repository.save(fromClientDTO(obj));
-		return new ClientDTO(entity);
-		
+
+	@Transactional
+	public ClientDTO update(Long id, ClientDTO obj){
+		try{
+			Client entity = repository.getOne(id);
+			fromClientDTO(entity, obj);
+			entity = repository.save(entity);
+			return new ClientDTO(entity);
+		}
+		catch(EntityNotFoundException e){
+			throw new ResourceNotFoundException("Resource not found! Id: " + id);
+		}	
+	}
+
+	public void delete(Long id){
+		try{
+			repository.deleteById(id);
+		}
+		catch(EntityNotFoundException e){
+			throw new ResourceNotFoundException("Resource not found! Id: " + id);
+		}	
 	}
 	
-	public void delete(Long id) {
-		findById(id);
-		repository.deleteById(id);
-	}
-	
-	public Client fromClientDTO(ClientDTO obj) {
-		return new Client(obj.getId(), obj.getName(), obj.getCpf(), 
-				obj.getIncome(), obj.getBirthDate().toString(), obj.getChildren());
-	}
-	
-	public void updateData(NewClientDTO newObj, ClientDTO obj) {
-		obj.setName(newObj.getName());
-		obj.setIncome(newObj.getIncome());
-		obj.setBirthDate(newObj.getBirthDate().toString());
-		obj.setChildren(newObj.getChildren());
+	public void fromClientDTO(Client entity, ClientDTO obj) {
+		entity.setName(obj.getName());
+		entity.setBirthDate(obj.getBirthDate());
+		entity.setIncome(obj.getIncome());
+		entity.setCpf(obj.getCpf());
+		entity.setChildren(obj.getChildren());
 	}
 }
