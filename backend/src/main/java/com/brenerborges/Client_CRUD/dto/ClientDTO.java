@@ -14,6 +14,8 @@ public class ClientDTO implements Serializable {
 	private Double income;
 	private Instant birthDate;
 	private Integer children;
+	private Instant createdAt;
+	private Instant updatedAt;
 	
 	public ClientDTO() {
 	}
@@ -25,6 +27,8 @@ public class ClientDTO implements Serializable {
 		income = entity.getIncome();
 		birthDate = entity.getBirthDate();
 		children = entity.getChildren();
+		createdAt = entity.getCreatedAt();
+		updatedAt = entity.getUpdatedAt();
 	}
 
 	public Long getId() {
@@ -73,5 +77,13 @@ public class ClientDTO implements Serializable {
 
 	public void setChildren(Integer children) {
 		this.children = children;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public Instant getUpdatedAt() {
+		return updatedAt;
 	}
 }
